@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DND Character Creator</title>
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        margin: 0;
+        padding: 40px 0;
+        
+        /* --- BACKGROUND IMAGE STYLES --- */
+        background-image: url('https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.justwravel.com%2Fblog%2Fweb-stories%2F6-beautiful-valleys-of-india-for-every-traveler%2F&psig=AOvVaw25YMD0gvZb5tUoUGoeLSvv&ust=1759758544014000&source=images&cd=vfe&opi=89978449&ved=0CBYQjRxqFwoTCPC1tOWZjZADFQAAAAAdAAAAABAb');
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center center;
+        position: relative;
+    }
+
+    /* --- TRANSPARENT GREY OVERLAY --- */
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(60, 60, 60, 0.2); /* Grey with 50% transparency */
+        z-index: -1;
+    }
+
+    .yellow-block {
+        width: 800px;
+        max-width: 95%;
+        padding: 40px;
+        background-color: rgba(212, 175, 55, 0.85); /* Yellow with 85% transparency */
+        border-radius: 10px;
+        box-shadow: 2px 2px 12px rgba(0,0,0,0.5);
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        z-index: 1;
+    }
+    .yellow-block h2, .yellow-block h3 {
+        text-align: center;
+        margin-top: 0;
+    }
+    .yellow-block p {
+        margin: 5px 0;
+    }
+    #character-header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    #character-info {
+        flex-grow: 1;
+        min-width: 250px;
+    }
+    #character-image-container {
+        flex-shrink: 0;
+        width: 200px;
+        height: 200px;
+        background-color: #444;
+        border: 3px solid #333;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: #aaa;
+        font-style: italic;
+        padding: 5px;
+        box-sizing: border-box;
+    }
+    #character-image-container svg {
+        width: 50px;
+        height: 50px;
+        fill: #aaa;
+        margin-bottom: 10px;
+    }
+    #character-image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 5px;
+    }
+    #ai-generated-content {
+        background-color: #333;
+        color: white;
+        border-radius: 10px;
+        margin-top: 20px;
+        padding: 20px;
+        text-align: center;
+    }
+    #story-output {
+        white-space: pre-wrap;
+        text-align: left;
+        margin-top: 15px;
+        padding: 10px;
+        border: 1px solid #555;
+        border-radius: 5px;
+        min-height: 100px;
+        background-color: rgba(0,0,0,0.2);
+    }
+    #portrait-output {
+        margin-top: 15px;
+        min-height: 250px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #444;
+        border-radius: 5px;
+        font-style: italic;
+    }
+    #portrait-output img {
+        max-width: 100%;
+        max-height: 400px; /* Increased height for better portraits */
+        border-radius: 5px;
+    }
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .form-row input,
+    .form-row select,
+    .form-row button {
+        flex: 1 1 120px;
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #999;
+        font-size: 16px;
+    }
+    .form-row button, #confirm-equip-btn, #edit-equip-btn, .gen-btn {
+        background-color: #333;
+        color: white;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 5px;
+        font-size: 16px;
+        transition: background-color 0.2s;
+    }
+    .form-row button:hover, #confirm-equip-btn:hover, #edit-equip-btn:hover, .gen-btn:hover {
+        background-color: #555;
+    }
+     .gen-btn:disabled {
+        background-color: #555;
+        cursor: not-allowed;
+    }
+    #update-btn {
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    #black-bar, #black-bar2 {
+        height: 2px;
+        background-color: rgb(99, 99, 99);
+        margin-top: 10px;
+    }
+    #dark-block, #dark-block2, #saving-throws-block, #skills-block, #equipment-choices-block, #final-equipment-block, #features-proficiencies-block {
+        background-color: rgba(0, 0, 0, 0.4);
+        color: white;
+        border-radius: 10px;
+        margin-top: 20px;
+        padding: 20px;
+        overflow-y: auto;
+    }
+    #dark-block {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        text-align: center;
+        height: auto;
+    }
+    #dark-block .attr { margin: 5px 0; }
+    #dark-block2 h3, #saving-throws-block h3, #skills-block h3, #equipment-choices-block h3, #final-equipment-block h3, #features-proficiencies-block h3 {
+        margin-top: 0;
+        text-align: center;
+        border-bottom: 1px solid white;
+        padding-bottom: 10px;
+        width: 50%;
+        min-width: 150px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+     #dark-block2, #saving-throws-block {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        text-align: center;
+    }
+    #dark-block2 p, .save-item { margin: 8px 0; }
+    #skills-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        text-align: left;
+    }
+    .skill-item { display: flex; align-items: center; }
+    .skill-item label { flex-grow: 1; margin-left: 8px; }
+    .skill-item .skill-mod { font-weight: bold; margin-left: auto; padding-left: 10px; }
+    .equip-choice-group { margin-bottom: 15px; border: 1px solid #888; border-radius: 5px; padding: 10px; }
+    .equip-choice-group legend { padding: 0 5px; }
+    .equip-fixed-item { padding: 5px; background-color: rgba(0,0,0,0.2); border-radius: 5px; margin-bottom: 15px; text-align: center; }
+    #final-equipment-block ul { list-style-type: disc; padding-left: 40px; }
+    .feature-category {
+        margin-top: 15px;
+    }
+    .feature-category h4 {
+        color: #d4af37;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #555;
+        padding-bottom: 5px;
+    }
+    .feature-item p { margin: 5px 0 10px 0; }
+    .feature-item strong { color: #f0f0f0; }
+</style>
+</head>
+<body>
+<div class="yellow-block">
+    <div id="character-header">
+        <div id="character-info">
+            <h2>🛡️ My DND Character</h2>
+            <p>Name: <span id="char-name">TBD</span></p>
+            <p>Gender: <span id="char-gender">TBD</span></p>
+            <p>Class: <span id="char-class">TBD</span></p>
+            <p>Background: <span id="char-background">TBD</span></p>
+            <p>Alignment: <span id="char-alignment">TBD</span></p>
+            <p>Race: <span id="char-race">TBD</span></p>
+            <p>Subrace: <span id="char-subrace">TBD</span></p>
+            <p>Level: <span id="char-level">1</span></p>
+            <p>Subclass: <span id="char-subclass">TBD</span></p>
+        </div>
+        <div id="character-image-container">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 22h-2v-2a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v2H4v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2zm-8-9a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+            Character Portrait
+        </div>
+    </div>
+
+    <hr style="margin: 20px 0;">
+
+    <p id="saved-message" style="display:none; color:green; font-weight:bold;">✅ Character Info Saved</p>
+    <button id="update-btn" onclick="showForm()" style="display:none;">Update</button>
+
+    <div id="black-bar" style="display:none;"></div>
+    <p id="point-question" style="display:none; color:black; font-weight:bold;">🎲 Attributes</p>
+    <div id="saved-stats-display" style="display:none; text-align:center; margin-top:15px; background-color: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">
+        <p id="stats-text" style="font-weight:bold; color:black; margin: 0;"></p>
+        <button id="edit-stats-btn" onclick="editSavedStats()" style="font-size:12px; margin-top:10px;">Update Stats</button>
+    </div>
+    <div id="method-buttons" style="display:none; justify-content:center; gap:10px; margin-top:20px;">
+        <button onclick="showAttributes('roll')">Roll For Stats</button>
+        <button onclick="showAttributes('point')">Point Buy</button>
+        <button onclick="showAttributes('standard')">Standard Array</button>
+    </div>
+    <div id="dark-block" style="display:none; margin-top:20px;">
+        <div id="roll-section" style="display:none; margin-top:15px;"><p><b>🎲 Roll for Stats:</b> Roll 4d6 and drop the lowest for each attribute.</p><button onclick="rollStats()">Randomize Stats</button><div id="rolled-attributes" style="margin-top:15px;"></div></div>
+        <div id="pointbuy-section" style="display:none; margin-top:15px;"><p><b>🧮 Point Buy:</b> Distribute 27 points among attributes. Each stat starts at 8. (Costs are 8:0, 13:5, 14:7, 15:9)</p><div id="attributes" style="margin-top:10px;text-align: center;"><div class="attr"><b>Strength:</b><button onclick="changeStat('str', -1)">-</button><span id="str">8</span><button onclick="changeStat('str', 1)">+</button>+ <span id="strRace">0</span> = total: <span id="totalStr">8</span><span id="strMod">(Mod: -1)</span><span id="strPointCost">(Cost: 0)</span></div><div class="attr"><b>Dexterity:</b><button onclick="changeStat('dex', -1)">-</button><span id="dex">8</span><button onclick="changeStat('dex', 1)">+</button>+ <span id="dexRace">0</span> = total: <span id="totalDex">8</span><span id="dexMod">(Mod: -1)</span><span id="dexPointCost">(Cost: 0)</span></div><div class="attr"><b>Constitution:</b><button onclick="changeStat('con', -1)">-</button><span id="con">8</span><button onclick="changeStat('con', 1)">+</button>+ <span id="conRace">0</span> = total: <span id="totalCon">8</span><span id="conMod">(Mod: -1)</span><span id="conPointCost">(Cost: 0)</span></div><div class="attr"><b>Intelligence:</b><button onclick="changeStat('int', -1)">-</button><span id="int">8</span><button onclick="changeStat('int', 1)">+</button>+ <span id="intRace">0</span> = total: <span id="totalInt">8</span><span id="intMod">(Mod: -1)</span><span id="intPointCost">(Cost: 0)</span></div><div class="attr"><b>Wisdom:</b><button onclick="changeStat('wis', -1)">-</button><span id="wis">8</span><button onclick="changeStat('wis', 1)">+</button>+ <span id="wisRace">0</span> = total: <span id="totalWis">8</span><span id="wisMod">(Mod: -1)</span><span id="wisPointCost">(Cost: 0)</span></div><div class="attr"><b>Charisma:</b><button onclick="changeStat('cha', -1)">-</button><span id="cha">8</span><button onclick="changeStat('cha', 1)">+</button>+ <span id="chaRace">0</span> = total: <span id="totalCha">8</span><span id="chaMod">(Mod: -1)</span><span id="chaPointCost">(Cost: 0)</span></div></div><p><b>Total Points Used:</b> <span id="total-points">0</span> / 27</p></div>
+        <div id="standard-section" style="display:none; margin-top:15px;"><p><b>📜 Standard Array:</b> Assign the scores **15, 14, 13, 12, 10, 8** to your abilities.</p><div id="standard-attributes" style="margin-top:10px; text-align:center;"><div class="attr"><b>Strength:</b><select id="str-std-select" onchange="updateStandard('str', this.value)"></select>+ <span id="strRace-std">0</span> = total: <span id="totalStr-std">8</span><span id="strMod-std">(Mod: -1)</span></div><div class="attr"><b>Dexterity:</b><select id="dex-std-select" onchange="updateStandard('dex', this.value)"></select>+ <span id="dexRace-std">0</span> = total: <span id="totalDex-std">8</span><span id="dexMod-std">(Mod: -1)</span></div><div class="attr"><b>Constitution:</b><select id="con-std-select" onchange="updateStandard('con', this.value)"></select>+ <span id="conRace-std">0</span> = total: <span id="totalCon-std">8</span><span id="conMod-std">(Mod: -1)</span></div><div class="attr"><b>Intelligence:</b><select id="int-std-select" onchange="updateStandard('int', this.value)"></select>+ <span id="intRace-std">0</span> = total: <span id="totalInt-std">8</span><span id="intMod-std">(Mod: -1)</span></div><div class="attr"><b>Wisdom:</b><select id="wis-std-select" onchange="updateStandard('wis', this.value)"></select>+ <span id="wisRace-std">0</span> = total: <span id="totalWis-std">8</span><span id="wisMod-std">(Mod: -1)</span></div><div class="attr"><b>Charisma:</b><select id="cha-std-select" onchange="updateStandard('cha', this.value)"></select>+ <span id="chaRace-std">0</span> = total: <span id="totalCha-std">8</span><span id="chaMod-std">(Mod: -1)</span></div></div></div>
+        <div id="save-stats-container" style="display:none; margin-top:15px; text-align:center;"><button id="save-stats-btn" onclick="saveStats()">💾 Save Stats</button><p id="stats-saved-message" style="display:none; color:green; font-weight:bold;">✅ Stats Saved</p></div>
+    </div>
+    <div id="black-bar2" style="display:none;"></div>
+    <div id="dark-block2" style="display:none;">
+        <h3>⚔️ Combat Stats</h3>
+        <p><strong>Max Hit Points:</strong> <span id="char-hp">10</span></p>
+        <p><strong>Armor Class:</strong> <span id="char-ac">10</span> <em style="font-size: 0.8em; opacity: 0.8;">(Unarmored)</em></p>
+        <p><strong>Initiative:</strong> <span id="char-initiative">+0</span></p>
+        <p><strong>Speed:</strong> <span id="char-speed">30</span> ft.</p>
+        <p><strong>Hit Dice:</strong> <span id="char-hit-dice">1d8</span></p>
+    </div>
+
+    <div id="saving-throws-block" style="display:none;">
+        <h3>🛡️ Saving Throws</h3>
+        <div id="saves-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+            <p class="save-item"><strong>STR:</strong> <span id="str-save-bonus">+0</span></p>
+            <p class="save-item"><strong>DEX:</strong> <span id="dex-save-bonus">+0</span></p>
+            <p class="save-item"><strong>CON:</strong> <span id="con-save-bonus">+0</span></p>
+            <p class="save-item"><strong>INT:</strong> <span id="int-save-bonus">+0</span></p>
+            <p class="save-item"><strong>WIS:</strong> <span id="wis-save-bonus">+0</span></p>
+            <p class="save-item"><strong>CHA:</strong> <span id="cha-save-bonus">+0</span></p>
+        </div>
+    </div>
+    
+    <div id="skills-block" style="display:none;">
+        <h3>🎯 Skills (Choose 2)</h3>
+        <div id="skills-list"></div>
+    </div>
+
+    <div id="features-proficiencies-block" style="display:none;">
+        <h3>🌟 Proficiencies & Features</h3>
+        <div id="proficiencies-content" class="feature-category"></div>
+        <div id="racial-traits-content" class="feature-category"></div>
+        <div id="class-features-content" class="feature-category"></div>
+    </div>
+
+    <div id="equipment-choices-block" style="display:none;">
+            <h3>🎒 Starting Equipment</h3>
+            <div id="equipment-options"></div>
+            <button id="confirm-equip-btn" onclick="saveEquipment()" style="display: block; margin: 10px auto 0;">Confirm Equipment</button>
+    </div>
+
+    <div id="final-equipment-block" style="display:none;">
+        <h3>💎 Weapons & Equipment</h3>
+        <ul id="equipment-list"></ul>
+        <button id="edit-equip-btn" onclick="editEquipment()" style="display: block; margin: 10px auto 0;">Edit Equipment</button>
+    </div>
+
+    <div id="ai-generated-content" style="display:none;">
+        <h3>✨ AI Generated Content (Gemini Integrated)</h3>
+    
+        <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px;">
+            <div style="text-align: left;">
+                <label for="appearance-input" style="font-weight: bold;">Appearance & Pose (e.g., "long silver hair, determined expression, holding a glowing sword"):</label>
+                <textarea id="appearance-input" rows="3" style="width: 100%; margin-top: 5px; background-color:#555; color: white; border-radius: 5px; padding: 8px; box-sizing: border-box;">A determined-looking man with short, black hair and a light beard, holding a glowing longsword in a ready stance.</textarea>
+            </div>
+             <div style="text-align: left;">
+                <label for="setting-input" style="font-weight: bold;">Setting / Background (e.g., "in a dark dungeon", "on a snowy mountain peak"):</label>
+                <input type="text" id="setting-input" value="standing on a cliff overlooking a misty valley at sunset" style="width: 100%; margin-top: 5px; background-color:#555; color: white; border-radius: 5px; padding: 8px; box-sizing: border-box;">
+            </div>
+            
+            <div style="display: flex; justify-content: space-around; gap: 20px;">
+                <button class="gen-btn" id="story-btn" onclick="generateStory()">Generate Short Story 📖</button>
+                <button class="gen-btn" id="portrait-btn" onclick="generatePortrait()">Generate Portrait 🖼️</button>
+            </div>
+        </div>
+    
+        <h4>Character Portrait:</h4>
+        <div id="portrait-output">
+            <p id="portrait-prompt-text">Click "Generate Portrait" to get a character image!</p>
+        </div>
+    
+        <h4>Origin Story:</h4>
+        <div id="story-output">
+            <p id="story-text">Click "Generate Short Story" to generate your character's origin!</p>
+        </div>
+    </div>
+
+    <div class="form-row" id="form-row">
+        <input type="text" id="name-input" placeholder="Name">
+        <input type="text" id="gender-input" placeholder="Gender">
+        <select id="background-dropdown"><option value="">--Background--</option><option value="Acolyte">Acolyte</option><option value="Artisan">Artisan</option><option value="Charlatan">Charlatan</option><option value="Criminal">Criminal</option><option value="Entertainer">Entertainer</option><option value="Noble">Noble</option><option value="Sage">Sage</option><option value="Soldier">Soldier</option><option value="Urchin">Urchin</option><option value="Folk Hero">Folk Hero</option><option value="Hermit">Hermit</option><option value="Outlander">Outlander</option><option value="Sailor">Sailor</option></select>
+        <select id="alignment-dropdown"><option value="">--Alignment--</option><option value="Lawful Good">Lawful Good</option><option value="Lawful Neutral">Lawful Neutral</option><option value="Lawful Evil">Lawful Evil</option><option value="Neutral Good">Neutral Good</option><option value="Neutral">Neutral</option><option value="Neutral Evil">Neutral Evil</option><option value="Chaotic Good">Chaotic Good</option><option value="Chaotic Neutral">Chaotic Neutral</option><option value="Chaotic Evil">Chaotic Evil</option></select>
+        <select id="class-dropdown"><option value="">--Class--</option><option value="Artificer">Artificer</option><option value="Barbarian">Barbarian</option><option value="Bard">Bard</option><option value="Cleric">Cleric</option><option value="Druid">Druid</option><option value="Fighter">Fighter</option><option value="Monk">Monk</option><option value="Paladin">Paladin</option><option value="Ranger">Ranger</option><option value="Rogue">Rogue</option><option value="Sorcerer">Sorcerer</option><option value="Warlock">Warlock</option><option value="Wizard">Wizard</option></select>
+        <select id="race-dropdown"><option value="">--Race--</option><option value="Aarakocra">Aarakocra</option><option value="Aasimar">Aasimar</option><option value="Bugbear">Bugbear</option><option value="Centaur">Centaur</option><option value="Changeling">Changeling</option><option value="Dragonborn">Dragonborn</option><option value="Dwarf">Dwarf</option><option value="Elf">Elf</option><option value="Firbolg">Firbolg</option><option value="Genasi">Genasi</option><option value="Gith">Gith</option><option value="Gnome">Gnome</option><option value="Goblin">Goblin</option><option value="Goliath">Goliath</option><option value="Grung">Grung</option><option value="Half-Elf">Half-Elf</option><option value="Half-Orc">Half-Orc</option><option value="Halfling">Halfling</option><option value="Hobgoblin">Hobgoblin</option><option value="Human">Human</option><option value="Kalashtar">Kalashtar</option><option value="Kenku">Kenku</option><option value="Kobold">Kobold</option><option value="Leonin">Leonin</option><option value="Lizardfolk">Lizardfolk</option><option value="Locathah">Locathah</option><option value="Loxodon">Loxodon</option><option value="Minotaur">Minotaur</option><option value="Satyr">Satyr</option><option value="Shifter">Shifter</option><option value="Simic Hybrid">Simic Hybrid</option><option value="Tabaxi">Tabaxi</option><option value="Tiefling">Tiefling</option><option value="Tortle">Tortle</option><option value="Triton">Triton</option><option value="Vedalken">Vedalken</option><option value="Warforged">Warforged</option><option value="Yuan-Ti Pureblood">Yuan-Ti Pureblood</option></select>
+        <select id="subrace-dropdown" style="display:none;"></select>
+        <div id="variant-container" style="display:none; gap:10px;"></div>
+        <select id="level-dropdown"><option value="">--Level--</option><script>for(let i=1;i<=20;i++){document.write(`<option value="${i}">${i}</option>`);}</script></select>
+        <select id="subclass-dropdown" style="display:none;"></select>
+        <button onclick="saveCharacter()">Confirm</button>
+    </div>
+    <div id="bottom-spacer"></div>
+</div>
+
+<script>
+// ---------- DATA ----------
+const classHitDice = { Artificer: 8, Barbarian: 12, Bard: 8, Cleric: 8, Druid: 8, Fighter: 10, Monk: 8, Paladin: 10, Ranger: 10, Rogue: 8, Sorcerer: 6, Warlock: 8, Wizard: 6 };
+const classSavingThrows = { Artificer: ['con', 'int'], Barbarian: ['str', 'con'], Bard: ['dex', 'cha'], Cleric: ['wis', 'cha'], Druid: ['int', 'wis'], Fighter: ['str', 'con'], Monk: ['str', 'dex'], Paladin: ['wis', 'cha'], Ranger: ['str', 'dex'], Rogue: ['dex', 'int'], Sorcerer: ['con', 'cha'], Warlock: ['wis', 'cha'], Wizard: ['int', 'wis'] };
+const skillsData = { 'Acrobatics': 'dex', 'Animal Handling': 'wis', 'Arcana': 'int', 'Athletics': 'str', 'Deception': 'cha', 'History': 'int', 'Intimidation': 'cha', 'Investigation': 'int', 'Medicine': 'wis', 'Nature': 'int', 'Perception': 'wis', 'Performance': 'cha', 'Persuasion': 'cha', 'Religion': 'int', 'Sleight of Hand': 'dex', 'Stealth': 'dex', 'Survival': 'wis' };
+const startingEquipment = {
+    Artificer: ["Any two simple weapons", "A light crossbow and 20 bolts", ["Studded leather armor", "Scale mail"], "Thieves' tools and a dungeoneer's pack"],
+    Barbarian: [["A greataxe", "Any martial melee weapon"], ["Two handaxes", "Any simple weapon"], "An explorer's pack and four javelins"],
+    Bard: [["A rapier", "A longsword", "Any simple weapon"], ["A diplomat's pack", "An entertainer's pack"], ["A lute", "Any other musical instrument"], "Leather armor and a dagger"],
+    Cleric: [["A mace", "A warhammer (if proficient)"], ["Scale mail", "Leather armor", "Chain mail (if proficient)"], ["A light crossbow and 20 bolts", "Any simple weapon"], ["A priest's pack", "An explorer's pack"], "A shield and a holy symbol"],
+    Druid: [["A wooden shield", "Any simple weapon"], ["A scimitar", "Any simple melee weapon"], "Leather armor, an explorer's pack, and a druidic focus"],
+    Fighter: [["Chain mail", "Leather armor, longbow, and 20 arrows"], ["A martial weapon and a shield", "Two martial weapons"], ["A light crossbow and 20 bolts", "Two handaxes"], ["A dungeoneer's pack", "An explorer's pack"]],
+    Monk: [["A shortsword", "Any simple weapon"], ["A dungeoneer's pack", "An explorer's pack"], "10 darts"],
+    Paladin: [["A martial weapon and a shield", "Two martial weapons"], ["Five javelins", "Any simple melee weapon"], ["A priest's pack", "An explorer's pack"], "Chain mail and a holy symbol"],
+    Ranger: [["Scale mail", "Leather armor"], ["Two shortswords", "Two simple melee weapons"], ["A dungeoneer's pack", "An explorer's pack"], "A longbow and a quiver of 20 arrows"],
+    Rogue: [["A rapier", "A shortsword"], ["A shortbow and quiver of 20 arrows", "A shortsword"], ["A burglar's pack", "A dungeoneer's pack", "An explorer's pack"], "Leather armor, two daggers, and thieves' tools"],
+    Sorcerer: [["A light crossbow and 20 bolts", "Any simple weapon"], ["A component pouch", "An arcane focus"], ["A dungeoneer's pack", "An explorer's pack"], "Two daggers"],
+    Warlock: [["A light crossbow and 20 bolts", "Any simple weapon"], ["A component pouch", "An arcane focus"], ["A scholar's pack", "A dungeoneer's pack"], "Leather armor, any simple weapon, and two daggers"],
+    Wizard: [["A quarterstaff", "A dagger"], ["A component pouch", "An arcane focus"], ["A scholar's pack", "An explorer's pack"], "A spellbook"]
+};
+const subraces = { Human:["Standard","Variant"], Elf:["High","Wood","Drow"], Gnome:["Forest","Rock"], Dwarf:["Hill","Mountain"], Halfling:["Lightfoot","Stout"], Tiefling:["Asmodeus"], Aasimar:["Protector","Scourge","Fallen"], Genasi:["Air","Earth","Fire","Water"], Gith:["Githyanki","Githzerai"], "Half-Orc":["Standard"], Shifter:["Beasthide","Longtooth","Swiftstride","Wildhunt"], "Half-Elf":["Standard"] };
+const variants = { Changeling:["Strength","Dexterity","Constitution","Intelligence","Wisdom"], "Half-Elf":["Strength","Dexterity","Constitution","Intelligence","Wisdom"], "Simic Hybrid":["Strength","Dexterity","Intelligence","Wisdom","Charisma"], Warforged:["Strength","Dexterity","Intelligence","Wisdom","Charisma"] };
+const classSubclasses = {Fighter:3,Wizard:2,Rogue:3,Cleric:1,Paladin:3,Barbarian:3,Bard:3,Druid:2,Ranger:3,Sorcerer:1,Warlock:1,Artificer:3,Monk:3};
+const subclasses = { Fighter:["Champion","Battle Master","Eldritch Knight"], Wizard:["Abjuration","Evocation","Conjuration"], Rogue:["Thief","Assassin","Arcane Trickster"], Cleric:["Life","Light","War"], Paladin:["Devotion","Ancients","Vengeance"], Barbarian:["Berserker","Totem Warrior"], Bard:["Lore","Valor"], Druid:["Land","Moon"], Monk:["Open Hand","Shadow","Four Elements"], Ranger:["Hunter","Beast Master"], Sorcerer:["Draconic","Wild Magic"], Warlock:["Archfey","Fiend","Great Old One"], Artificer:["Alchemist","Artillerist","Battlesmith"] };
+const racialSpeeds = { Dwarf: 25, Elf: 30, Wood: 35, Halfling: 25, Gnome: 25, Human: 30, Dragonborn: 30, "Half-Elf": 30, "Half-Orc": 30, Tiefling: 30, Aarakocra: 50, Tabaxi: 30, Tortle: 30, Centaur: 40 };
+
+const classProficiencies = {
+    Fighter: { armor: "All armor, shields", weapons: "Simple weapons, martial weapons", tools: "None" },
+    Rogue: { armor: "Light armor", weapons: "Simple weapons, hand crossbows, longswords, rapiers, shortswords", tools: "Thieves' tools" },
+    Wizard: { armor: "None", weapons: "Daggers, darts, slings, quarterstaffs, light crossbows", tools: "None" }
+};
+
+const racialTraits = {
+    Dwarf: { traits: [ { name: "Darkvision", desc: "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light." }, { name: "Dwarven Resilience", desc: "You have advantage on saving throws against poison, and you have resistance against poison damage." }, { name: "Dwarven Combat Training", desc: "You have proficiency with the battleaxe, handaxe, light hammer, and warhammer." }, { name: "Tool Proficiency", desc: "You gain proficiency with the artisan's tools of your choice: smith's tools, brewer's supplies, or mason's tools." } ] },
+    Hill: { traits: [ { name: "Dwarven Toughness", desc: "Your hit point maximum increases by 1, and it increases by 1 every time you gain a level." } ] },
+    Elf: { traits: [ { name: "Darkvision", desc: "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light." }, { name: "Fey Ancestry", desc: "You have advantage on saving throws against being charmed, and magic can't put you to sleep." }, { name: "Trance", desc: "Elves don’t need to sleep. Instead, they meditate deeply, remaining semiconscious, for 4 hours a day." } ] },
+    Wood: { traits: [ { name: "Elf Weapon Training", desc: "You have proficiency with the longsword, shortsword, shortbow, and longbow." }, { name: "Fleet of Foot", desc: "Your base walking speed increases to 35 feet." }, { name: "Mask of the Wild", desc: "You can attempt to hide even when you are only lightly obscured by foliage, heavy rain, falling snow, mist, and other natural phenomena." } ] },
+    Human: { traits: [ { name: "Versatile", desc: "As a standard human, your ability scores each increase by 1. You also learn one extra language of your choice." } ] }
+};
+
+const classFeatures = {
+    Fighter: {
+        1: [ { name: "Fighting Style", desc: "You adopt a particular style of fighting as your specialty. Choose one of the available options (e.g., Archery, Dueling)." }, { name: "Second Wind", desc: "On your turn, you can use a bonus action to regain hit points equal to 1d10 + your fighter level." } ],
+        2: [ { name: "Action Surge", desc: "On your turn, you can take one additional action. Once you use this feature, you must finish a short or long rest before you can use it again." } ],
+        3: [ { name: "Martial Archetype", desc: "You choose an archetype that you strive to emulate in your combat styles and techniques, such as Champion." } ],
+        4: [ { name: "Ability Score Improvement", desc: "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1." } ],
+        5: [ { name: "Extra Attack", desc: "You can attack twice, instead of once, whenever you take the Attack action on your turn." } ]
+    },
+    Rogue: {
+        1: [ { name: "Expertise", desc: "Choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies." }, { name: "Sneak Attack", desc: "Once per turn, you can deal an extra 1d6 damage to one creature you hit with an attack if you have advantage on the attack roll." }, { name: "Thieves' Cant", desc: "You know the secret mix of dialect, jargon, and code that allows you to hide messages in seemingly normal conversation." } ],
+        2: [ { name: "Cunning Action", desc: "You can take a bonus action on each of your turns in combat. This action can be used only to take the Dash, Disengage, or Hide action." } ],
+        3: [ { name: "Roguish Archetype", desc: "You choose an archetype that you emulate in the exercise of your rogue abilities, such as Thief." } ],
+        4: [ { name: "Ability Score Improvement", desc: "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1." } ],
+        5: [ { name: "Uncanny Dodge", desc: "When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack's damage against you." } ]
+    },
+    Wizard: {
+        1: [ { name: "Spellcasting", desc: "You have a spellbook containing spells that show the first glimmerings of your true power." }, { name: "Arcane Recovery", desc: "Once per day when you finish a short rest, you can choose expended spell slots to recover." } ],
+        2: [ { name: "Arcane Tradition", desc: "You choose an arcane tradition, shaping your practice of magic through one of eight schools, such as the School of Evocation." } ],
+        3: [ { name: "—", desc: "Access to 2nd-level spells." } ],
+        4: [ { name: "Ability Score Improvement", desc: "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1." } ],
+        5: [ { name: "—", desc: "Access to 3rd-level spells." } ]
+    }
+};
+
+// ---------- GLOBAL STATE VARIABLES ----------
+const stats = { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 };
+const standardArray = [15, 14, 13, 12, 10, 8];
+const attributeKeys = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+let savedStats = null;
+let activeAttributeMethod = '';
+
+// ---------- HELPER FUNCTIONS ----------
+function getMod(score){return Math.floor((score-10)/2);}
+function getRacialBonus(race, subrace){ const racialBonuses = { Human: {str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1}, Elf: {dex: 2}, High: {int: 1}, Wood: {wis: 1}, Drow: {cha: 1}, Dwarf: {con: 2}, Hill: {wis: 1}, Mountain:{str: 2}, Halfling:{dex: 2}, Lightfoot: {cha: 1}, Stout: {con: 1}, Gnome: {int: 2}, Forest: {dex: 1}, Rock: {con: 1}, "Half-Elf": {cha: 2}, "Half-Orc": {str: 2, con: 1}, Dragonborn: {str: 2, cha: 1}, Tiefling: {int: 1, cha: 2} }; let bonus = {str:0,dex:0,con:0,int:0,wis:0,cha:0}; if(race && racialBonuses[race]) bonus={...bonus,...racialBonuses[race]}; if(subrace && racialBonuses[subrace]) bonus={...bonus,...racialBonuses[subrace]}; return bonus; }
+function updateTotals(){ const isStandard = activeAttributeMethod === 'standard'; const isPointBuy = activeAttributeMethod === 'point'; const race = document.getElementById("race-dropdown").value; const subrace = document.getElementById("subrace-dropdown").value; const bonus = getRacialBonus(race, subrace); const suffix = isStandard ? '-std' : ''; for(const key of attributeKeys){ const baseStat = stats[key]; const total = baseStat + (bonus[key] || 0); const mod = getMod(total); const raceSpan = document.getElementById(`${key}Race${suffix}`); const totalSpan = document.getElementById(`total${key.charAt(0).toUpperCase()+key.slice(1)}${suffix}`); const modSpan = document.getElementById(`${key}Mod${suffix}`); if (raceSpan) raceSpan.textContent = bonus[key] || 0; if (totalSpan) totalSpan.textContent = total; if (modSpan) modSpan.textContent = `(Mod: ${mod >= 0 ? '+' : ''}${mod})`; if (isPointBuy) { document.getElementById(key).textContent = baseStat; document.getElementById(`${key}PointCost`).textContent = `(Cost: ${Math.floor((baseStat-8) * (baseStat > 13 ? 1.5 : 1))})` } } if (isPointBuy) { let totalPoints = 0; for(const key in stats) totalPoints += Math.floor((stats[key]-8) * (stats[key] > 13 ? 1.5 : 1)); document.getElementById('total-points').textContent = totalPoints; } }
+function updateDerivedStats() { 
+    if (!savedStats) return; 
+    const race = document.getElementById("race-dropdown").value; 
+    const subrace = document.getElementById("subrace-dropdown").value; 
+    const charClass = document.getElementById("class-dropdown").value; 
+    const level = parseInt(document.getElementById("level-dropdown").value) || 1; 
+    const bonus = getRacialBonus(race, subrace); 
+    const mods = {}; 
+    
+    for (const key of attributeKeys) { 
+        mods[key] = getMod((savedStats[key] || 0) + (bonus[key] || 0)); 
+    } 
+    
+    const profBonus = Math.ceil(1 + level / 4); 
+    const proficientSaves = classSavingThrows[charClass] || []; 
+    
+    for (const key of attributeKeys) { 
+        const isProficient = proficientSaves.includes(key); 
+        const totalBonus = mods[key] + (isProficient ? profBonus : 0); 
+        const bonusText = totalBonus >= 0 ? `+${totalBonus}` : totalBonus; 
+        document.getElementById(`${key}-save-bonus`).textContent = `${bonusText} ${isProficient ? ' (P)' : ''}`; 
+    } 
+    
+    const skillCheckboxes = document.querySelectorAll('#skills-list input[type="checkbox"]'); 
+    skillCheckboxes.forEach(checkbox => { 
+        const skillName = checkbox.dataset.skill; 
+        const ability = skillsData[skillName]; 
+        const totalBonus = mods[ability] + (checkbox.checked ? profBonus : 0); 
+        const bonusText = totalBonus >= 0 ? `+${totalBonus}` : totalBonus; 
+        document.querySelector(`#skill-mod-${ability}-${skillName.replace(/\s/g, '')}`).textContent = bonusText; 
+    }); 
+    
+    let hitDieSize = classHitDice[charClass] || 8; 
+    const averageHitDie = Math.floor(hitDieSize / 2) + 1; 
+    let maxHp = hitDieSize + mods.con; 
+    
+    if (level > 1) { 
+        maxHp += (level - 1) * (averageHitDie + mods.con); 
+    } 
+    
+    document.getElementById('char-hp').textContent = maxHp; 
+    
+    let ac = 10 + mods.dex; 
+    let acNote = "(Unarmored)"; 
+    
+    if (charClass === 'Barbarian') { 
+        ac = 10 + mods.dex + mods.con; 
+        acNote = "(Unarmored - Barbarian)"; 
+    } else if (charClass === 'Monk') { 
+        ac = 10 + mods.dex + mods.wis; 
+        acNote = "(Unarmored - Monk)"; 
+    } 
+    
+    document.getElementById('char-ac').textContent = ac; 
+    document.querySelector('#dark-block2 p:nth-of-type(2) em').textContent = acNote; 
+    document.getElementById('char-initiative').textContent = mods.dex >= 0 ? `+${mods.dex}` : mods.dex; 
+    let speed = racialSpeeds[subrace] || racialSpeeds[race] || 30; 
+    document.getElementById('char-speed').textContent = speed; 
+    document.getElementById('char-hit-dice').textContent = `${level}d${hitDieSize}`; 
+}
+function roll4d6DropLowest(){ const rolls=[];for(let i=0;i<4;i++)rolls.push(Math.floor(Math.random()*6)+1); rolls.sort((a,b)=>a-b); return rolls[1]+rolls[2]+rolls[3]; }
+function rollStats(){ let displayHtml = '<div>'; for(const key in stats) { stats[key] = roll4d6DropLowest(); displayHtml += `<b>${key.toUpperCase()}:</b> ${stats[key]} &nbsp;`; } displayHtml += '</div>'; document.getElementById("rolled-attributes").innerHTML = displayHtml; updateTotals(); }
+function changeStat(stat, delta){ const newVal = stats[stat] + delta; if(newVal < 8 || newVal > 15) return; let tempTotalPoints = Math.floor((newVal-8) * (newVal > 13 ? 1.5 : 1)); for (const key of attributeKeys) { if (key !== stat) tempTotalPoints += Math.floor((stats[key]-8) * (stats[key] > 13 ? 1.5 : 1)); } if (tempTotalPoints > 27) return; stats[stat] = newVal; updateTotals(); }
+function updateStandard(changedStatKey, newScoreValue) { newScoreValue = parseInt(newScoreValue); const oldScoreValue = stats[changedStatKey]; const conflictingStatKey = attributeKeys.find(key => stats[key] === newScoreValue); if (conflictingStatKey) { stats[conflictingStatKey] = oldScoreValue; } stats[changedStatKey] = newScoreValue; attributeKeys.forEach(key => { document.getElementById(`${key}-std-select`).value = stats[key]; }); updateTotals(); }
+function saveStats() { 
+    savedStats = { ...stats }; 
+    const race = document.getElementById("race-dropdown").value; 
+    const subrace = document.getElementById("subrace-dropdown").value; 
+    const bonus = getRacialBonus(race, subrace); 
+    let displayText = ''; 
+    for(const key in savedStats){ 
+        const total = savedStats[key] + (bonus[key] || 0); 
+        displayText += `${key.toUpperCase()}: ${total} `; 
+    } 
+    document.getElementById("stats-text").textContent = displayText.trim(); 
+    document.getElementById("saved-stats-display").style.display = "block"; 
+    document.getElementById("dark-block").style.display = "none"; 
+    document.getElementById("method-buttons").style.display = "none"; 
+    document.getElementById("black-bar2").style.display = "block"; 
+    document.getElementById("dark-block2").style.display = "flex"; 
+    updateDerivedStats(); 
+}
+function editSavedStats() { 
+    document.getElementById("saved-stats-display").style.display = "none"; 
+    document.getElementById("dark-block").style.display = "block"; 
+    document.getElementById("method-buttons").style.display = "flex"; 
+    document.getElementById("black-bar2").style.display = "none"; 
+    document.getElementById("dark-block2").style.display = "none"; 
+    showAttributes(activeAttributeMethod); 
+}
+function populateEquipmentChoices() { 
+    const charClass = document.getElementById('class-dropdown').value; 
+    const container = document.getElementById('equipment-options'); 
+    container.innerHTML = ''; 
+    if (!charClass || !startingEquipment[charClass]) return; 
+    
+    const equipment = startingEquipment[charClass]; 
+    equipment.forEach((choice, index) => { 
+        if (typeof choice === 'string') { 
+            const p = document.createElement('p'); 
+            p.className = 'equip-fixed-item'; 
+            p.textContent = choice; 
+            container.appendChild(p); 
+        } else if (Array.isArray(choice)) { 
+            const fieldset = document.createElement('fieldset'); 
+            fieldset.className = 'equip-choice-group'; 
+            const legend = document.createElement('legend'); 
+            legend.textContent = `Choice ${index + 1}`; 
+            fieldset.appendChild(legend); 
+            choice.forEach((option, optIndex) => { 
+                const div = document.createElement('div'); 
+                const radio = document.createElement('input'); 
+                radio.type = 'radio'; 
+                radio.name = `equip-choice-${index}`; 
+                radio.value = option; 
+                radio.id = `equip-choice-${index}-${optIndex}`; 
+                if (optIndex === 0) radio.checked = true; 
+                const label = document.createElement('label'); 
+                label.htmlFor = `equip-choice-${index}-${optIndex}`; 
+                label.textContent = option; 
+                div.append(radio, label); 
+                fieldset.appendChild(div); 
+            }); 
+            container.appendChild(fieldset); 
+        } 
+    }); 
+}
+function saveEquipment() { 
+    const list = document.getElementById('equipment-list'); 
+    list.innerHTML = ''; 
+    const fixedItems = document.querySelectorAll('.equip-fixed-item'); 
+    fixedItems.forEach(item => { 
+        const li = document.createElement('li'); 
+        li.textContent = item.textContent; 
+        list.appendChild(li); 
+    }); 
+    const choices = document.querySelectorAll('fieldset.equip-choice-group'); 
+    choices.forEach(fieldset => { 
+        const selected = fieldset.querySelector('input[type="radio"]:checked'); 
+        if (selected) { 
+            const li = document.createElement('li'); 
+            li.textContent = selected.value; 
+            list.appendChild(li); 
+        } 
+    }); 
+    document.getElementById('equipment-choices-block').style.display = 'none'; 
+    document.getElementById('final-equipment-block').style.display = 'block'; 
+    document.getElementById('ai-generated-content').style.display = 'block';
+}
+
+function editEquipment() { 
+    document.getElementById('equipment-choices-block').style.display = 'block'; 
+    document.getElementById('final-equipment-block').style.display = 'none'; 
+    document.getElementById('ai-generated-content').style.display = 'none';
+}
+function updateSubrace(){ const race=document.getElementById("race-dropdown").value; const subraceDropdown=document.getElementById("subrace-dropdown"); const variantContainer=document.getElementById("variant-container"); subraceDropdown.innerHTML=""; if(subraces[race]){ subraces[race].forEach(s=>subraceDropdown.appendChild(new Option(s,s))); subraceDropdown.style.display="inline-block"; } else subraceDropdown.style.display="none"; variantContainer.innerHTML="";variantContainer.style.display="none"; if(variants[race]){ const sel=document.createElement("select"); sel.innerHTML="<option value=''>--Variant--</option>"; variants[race].forEach(v=>sel.appendChild(new Option(v,v))); variantContainer.appendChild(sel); variantContainer.style.display="flex"; } updateTotals(); }
+function updateSubclass(){ const cls=document.getElementById("class-dropdown").value; const lvl=parseInt(document.getElementById("level-dropdown").value); const sc=document.getElementById("subclass-dropdown"); if(cls && lvl && classSubclasses[cls] && lvl>=classSubclasses[cls]){ sc.innerHTML="<option value=''>--Subclass--</option>"; subclasses[cls].forEach(s=>sc.appendChild(new Option(s,s))); sc.style.display="inline-block"; } else sc.style.display="none"; }
+function updateFeaturesAndProficiencies() {
+    const charClass = document.getElementById("char-class").textContent;
+    const race = document.getElementById("char-race").textContent;
+    const subrace = document.getElementById("char-subrace").textContent;
+    const level = parseInt(document.getElementById("char-level").textContent) || 1;
+
+    const profContent = document.getElementById('proficiencies-content');
+    const racialContent = document.getElementById('racial-traits-content');
+    const featuresContent = document.getElementById('class-features-content');
+
+    profContent.innerHTML = '';
+    racialContent.innerHTML = '';
+    featuresContent.innerHTML = '';
+
+    if (classProficiencies[charClass]) {
+        const profs = classProficiencies[charClass];
+        let profHtml = '<h4>Proficiencies</h4><ul>';
+        profHtml += `<li><strong>Armor:</strong> ${profs.armor}</li>`;
+        profHtml += `<li><strong>Weapons:</strong> ${profs.weapons}</li>`;
+        profHtml += `<li><strong>Tools:</strong> ${profs.tools}</li>`;
+        profHtml += '</ul>';
+        profContent.innerHTML = profHtml;
+    }
+
+    let racialHtml = '<h4>Racial Traits</h4>';
+    let hasRacialTraits = false;
+    if (racialTraits[race] && racialTraits[race].traits) {
+        hasRacialTraits = true;
+        racialTraits[race].traits.forEach(trait => {
+            racialHtml += `<div class="feature-item"><p><strong>${trait.name}:</strong> ${trait.desc}</p></div>`;
+        });
+    }
+    if (racialTraits[subrace] && racialTraits[subrace].traits) {
+        hasRacialTraits = true;
+        racialTraits[subrace].traits.forEach(trait => {
+            racialHtml += `<div class="feature-item"><p><strong>${trait.name} (Subrace):</strong> ${trait.desc}</p></div>`;
+        });
+    }
+    racialContent.innerHTML = hasRacialTraits ? racialHtml : '';
+
+    let featuresHtml = '<h4>Class Features</h4>';
+    let hasClassFeatures = false;
+    if (classFeatures[charClass]) {
+        for (let i = 1; i <= level; i++) {
+            if (classFeatures[charClass][i]) {
+                hasClassFeatures = true;
+                featuresHtml += `<h5>Level ${i}</h5>`;
+                classFeatures[charClass][i].forEach(feature => {
+                    featuresHtml += `<div class="feature-item"><p><strong>${feature.name}:</strong> ${feature.desc}</p></div>`;
+                });
+            }
+        }
+    }
+    featuresContent.innerHTML = hasClassFeatures ? featuresHtml : '';
+}
+function saveCharacter(){
+    document.getElementById("char-name").textContent=document.getElementById("name-input").value||"TBD"; document.getElementById("char-gender").textContent=document.getElementById("gender-input").value||"TBD"; document.getElementById("char-background").textContent=document.getElementById("background-dropdown").value||"TBD"; document.getElementById("char-alignment").textContent=document.getElementById("alignment-dropdown").value||"TBD"; document.getElementById("char-class").textContent=document.getElementById("class-dropdown").value||"TBD"; document.getElementById("char-race").textContent=document.getElementById("race-dropdown").value||"TBD"; document.getElementById("char-subrace").textContent=document.getElementById("subrace-dropdown").value||"TBD"; document.getElementById("char-level").textContent=document.getElementById("level-dropdown").value||1; document.getElementById("char-subclass").textContent=document.getElementById("subclass-dropdown").value||"TBD";
+    
+    document.getElementById("form-row").style.display="none"; 
+    document.getElementById("variant-container").style.display="none"; 
+    document.getElementById("subclass-dropdown").style.display="none"; 
+    document.getElementById("saved-message").style.display="block"; 
+    document.getElementById("update-btn").style.display="inline-block";
+    
+    document.getElementById("saving-throws-block").style.display = "flex"; 
+    document.getElementById("skills-block").style.display = "block"; 
+    document.getElementById("features-proficiencies-block").style.display = "block";
+    document.getElementById("equipment-choices-block").style.display = "block"; 
+    
+    document.getElementById("black-bar").style.display = "block"; 
+    document.getElementById("point-question").style.display = "block";
+
+    if (savedStats) { 
+        document.getElementById("saved-stats-display").style.display = "block"; 
+        const race = document.getElementById("race-dropdown").value; 
+        const subrace = document.getElementById("subrace-dropdown").value; 
+        const bonus = getRacialBonus(race, subrace); 
+        let displayText = ''; 
+        for(const key in savedStats){ 
+            const total = savedStats[key] + (bonus[key] || 0); 
+            displayText += `${key.toUpperCase()}: ${total} `; 
+        } 
+        document.getElementById("stats-text").textContent = displayText.trim(); 
+        updateDerivedStats(); 
+    } else { 
+        document.getElementById("method-buttons").style.display = "flex"; 
+    }
+    
+    updateTotals(); 
+    populateEquipmentChoices();
+    updateFeaturesAndProficiencies();
+}
+function showForm(){
+    document.getElementById("form-row").style.display="flex"; 
+    document.getElementById("saved-message").style.display="none"; 
+    document.getElementById("update-btn").style.display="none"; 
+    document.getElementById("bottom-spacer").style.height="0px"; 
+    
+    const sectionsToHide = ["dark-block", "black-bar", "method-buttons", "point-question", "saved-stats-display", "black-bar2", "dark-block2", "saving-throws-block", "skills-block", "equipment-choices-block", "final-equipment-block", "ai-generated-content", "features-proficiencies-block"];
+    sectionsToHide.forEach(id => document.getElementById(id).style.display = "none");
+
+    updateSubrace(); 
+    updateSubclass();
+}
+function showAttributes(method){
+    activeAttributeMethod = method; 
+    document.getElementById("roll-section").style.display="none"; 
+    document.getElementById("pointbuy-section").style.display="none"; 
+    document.getElementById("standard-section").style.display="none"; 
+    document.getElementById("dark-block").style.display="flex"; 
+    document.getElementById("save-stats-container").style.display = "block"; 
+    document.getElementById("bottom-spacer").style.height="20px";
+    if (method === "roll") { 
+        document.getElementById("roll-section").style.display="block"; 
+        document.getElementById("rolled-attributes").innerHTML = 'Click "Randomize Stats" to roll!'; 
+    } else if (method === "point") { 
+        if (!savedStats) { for(const key of attributeKeys) stats[key] = 8; } 
+        document.getElementById("pointbuy-section").style.display="block"; 
+    } else if (method === "standard") { 
+        document.getElementById("standard-section").style.display = "block"; 
+        if (!savedStats) { attributeKeys.forEach((key, index) => { stats[key] = standardArray[index]; }); } 
+        attributeKeys.forEach(key => { 
+            const select = document.getElementById(`${key}-std-select`); 
+            if (select.options.length === 0) { standardArray.forEach(score => { select.add(new Option(score, score)); }); } 
+            select.value = stats[key]; 
+        }); 
+    }
+    updateTotals();
+}
+function initSkills() { const skillsList = document.getElementById('skills-list'); for (const skill in skillsData) { const ability = skillsData[skill]; const skillId = `${ability}-${skill.replace(/\s/g, '')}`; const item = document.createElement('div'); item.className = 'skill-item'; const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.id = `skill-check-${skillId}`; checkbox.dataset.skill = skill; const label = document.createElement('label'); label.htmlFor = `skill-check-${skillId}`; label.textContent = `${skill} (${ability.toUpperCase()})`; const modSpan = document.createElement('span'); modSpan.className = 'skill-mod'; modSpan.id = `skill-mod-${skillId}`; modSpan.textContent = '+0'; item.append(checkbox, label, modSpan); skillsList.appendChild(item); } skillsList.addEventListener('change', (e) => { if (e.target.type === 'checkbox') { const checkedCount = skillsList.querySelectorAll('input[type="checkbox"]:checked').length; const allCheckboxes = skillsList.querySelectorAll('input[type="checkbox"]'); const classDropdown = document.getElementById('class-dropdown').value; let skillLimit = 2; if (classDropdown === 'Rogue' || classDropdown === 'Bard') { skillLimit = 4; } if (checkedCount >= skillLimit) { allCheckboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; }); } else { allCheckboxes.forEach(cb => cb.disabled = false); } if(savedStats) updateDerivedStats(); } }); }
+
+document.addEventListener('DOMContentLoaded', initSkills);
+document.getElementById("class-dropdown").addEventListener("change", () => {
+    updateSubclass();
+    if (document.getElementById('equipment-choices-block').style.display !== 'none') {
+        populateEquipmentChoices();
+        if (savedStats) updateDerivedStats();
+    }
+});
+document.getElementById("race-dropdown").addEventListener("change", updateSubrace);
+document.getElementById("level-dropdown").addEventListener("change", () => {
+    updateSubclass();
+    if (savedStats) updateDerivedStats();
+    updateFeaturesAndProficiencies();
+});
+document.getElementById("subrace-dropdown").addEventListener("change", updateTotals);
+
+// ---------- AI GENERATION FUNCTIONS ----------
+function getCharacterData() {
+    const equipListItems = Array.from(document.getElementById('equipment-list').children);
+    const equipmentText = equipListItems.map(li => li.textContent).join(', ');
+
+    if (!savedStats) {
+        alert("Please save your character's stats first!");
+        return null;
+    }
+    
+    const race = document.getElementById("race-dropdown").value;
+    const subrace = document.getElementById("subrace-dropdown").value;
+    const bonus = getRacialBonus(race, subrace);
+    
+    const finalStats = {};
+    for(const key in savedStats) {
+        finalStats[key] = (savedStats[key] || 0) + (bonus[key] || 0);
+    }
+
+    return {
+        name: document.getElementById("char-name").textContent,
+        gender: document.getElementById("char-gender").textContent,
+        class: document.getElementById("char-class").textContent,
+        background: document.getElementById("char-background").textContent,
+        alignment: document.getElementById("char-alignment").textContent,
+        race: race,
+        subrace: subrace,
+        level: document.getElementById("char-level").textContent,
+        subclass: document.getElementById("char-subclass").textContent,
+        stats: finalStats,
+        equipment: equipmentText || "No equipment selected",
+        appearance: document.getElementById("appearance-input").value,
+        setting: document.getElementById("setting-input").value
+    };
+}
+
+async function generateStory() {
+    const data = getCharacterData();
+    if (!data) return;
+
+    const storyBtn = document.getElementById('story-btn');
+    const portraitBtn = document.getElementById('portrait-btn');
+    const storyTextElement = document.getElementById('story-text');
+    
+    storyTextElement.innerHTML = '<em>Generating story via Gemini... please wait.</em>';
+    storyBtn.disabled = true;
+    portraitBtn.disabled = true;
+
+    try {
+        const response = await fetch('/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                type: 'story', 
+                characterData: data 
+            })
+        });
+        
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || `HTTP error! Status: ${response.status}`);
+        }
+        
+        storyTextElement.textContent = result.text || 'Error: AI model returned no text.'; 
+    } catch (error) {
+        console.error('Error generating story:', error);
+        storyTextElement.textContent = `Error: ${error.message}`;
+    } finally {
+        storyBtn.disabled = false;
+        portraitBtn.disabled = false;
+    }
+}
+
+async function generatePortrait() {
+    const data = getCharacterData();
+    if (!data) return;
+
+    const portraitBtn = document.getElementById('portrait-btn');
+    const storyBtn = document.getElementById('story-btn');
+    const portraitOutput = document.getElementById('portrait-output');
+    const topPortraitContainer = document.getElementById('character-image-container');
+    
+    const loadingMessage = '<em>Generating portrait... this can take up to 30 seconds.</em>';
+    portraitOutput.innerHTML = loadingMessage;
+    topPortraitContainer.innerHTML = loadingMessage;
+
+    portraitBtn.disabled = true;
+    storyBtn.disabled = true;
+
+    try {
+        const response = await fetch('/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                type: 'portrait', 
+                characterData: data 
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || `HTTP error! Status: ${response.status}`);
+        }
+        
+        if (result.image_base_64) {
+            const mimeType = result.mime_type || 'image/jpeg';
+            const imageUrl = `data:${mimeType};base64,${result.image_base_64}`;
+            
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = data.name + ' Portrait';
+            
+            portraitOutput.innerHTML = '';
+            portraitOutput.appendChild(img.cloneNode());
+
+            topPortraitContainer.innerHTML = `<img src="${imageUrl}" alt="${data.name} Portrait">`;
+
+        } else {
+            throw new Error(result.error || 'Server did not return a Base64 image.');
+        }
+    } catch (error) {
+        console.error('Error generating portrait:', error);
+        const errorMessage = `<p style="color:red; font-weight:bold;">Error: ${error.message}</p>`;
+        portraitOutput.innerHTML = errorMessage;
+        topPortraitContainer.innerHTML = errorMessage;
+    } finally {
+        portraitBtn.disabled = false;
+        storyBtn.disabled = false;
+    }
+}
+</script>
+</body>
+</html>
